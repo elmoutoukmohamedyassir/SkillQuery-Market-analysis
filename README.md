@@ -1,0 +1,1 @@
+# SkillQuery-Market-analysis
