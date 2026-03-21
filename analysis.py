@@ -1,37 +1,47 @@
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
 
-# 1. Load the dataset
-# We use 'low_memory=True' to help your PC handle the file efficiently
+# 1. Load the Combined Dataset
 try:
-    df = pd.read_csv('data/ai_jobs.csv')
-    print(" Data loaded successfully!")
+    # We only load the columns we need to save RAM
+    cols_to_use = ['job_title', 'country', 'experience_level', 'salary_max_usd', 'posted_year']
+    df = pd.read_csv('data/skillquery_combined.csv', usecols=cols_to_use)
+    print("✅ Combined Data loaded successfully!")
 except FileNotFoundError:
-    print(" Error: 'ai_jobs.csv' not found in the /data folder.")
+    print("❌ Error: 'data/skillquery_combined.csv' not found. Run inject_local_data.py first!")
+    exit()
 
-# 2. Basic Inspection
-print("\n--- Project Overview (First 5 Rows) ---")
-print(df.head())
+# 2. Filter for Morocco vs Global
+morocco_df = df[df['country'] == 'Morocco']
+global_df = df[df['country'] != 'Morocco']
 
-print("\n--- Dataset Info ---")
-# This shows you column names and if any data is missing
-print(df.info())
+print(f"\n--- Market Analysis ---")
+print(f"Total Global records: {len(global_df)}")
+print(f"Total Morocco records: {len(morocco_df)}")
 
-print("\n--- Top 10 Job Titles Globally ---")
-print(df['job_title'].value_counts().head(10))
+# 3. Calculate Average Salary by Experience (Global)
+# This is a key insight for your portfolio
+avg_salary_global = global_df.groupby('experience_level')['salary_max_usd'].mean().sort_values()
+print("\n--- Average Global Max Salary (USD) ---")
+print(avg_salary_global.apply(lambda x: f"${x:,.2f}"))
 
+# 4. Visualization: Global vs Local Salary Trends
+# We use Seaborn for that professional 'Mondial' look
+plt.figure(figsize=(12, 6))
+sns.set_theme(style="whitegrid")
 
+# Create a comparison plot
+sns.barplot(data=df, x='experience_level', y='salary_max_usd', hue='country', 
+            palette='magma', errorbar=None)
 
-# 3. Filter for Morocco 
-# We check for 'MA' or 'Morocco' to be safe
-morocco_jobs = df[df['country'].isin(['MA', 'Morocco', 'morocco', 'ma'])]
+plt.title('2026 Tech Salary Benchmark: Morocco vs. Global Average', fontsize=16, pad=20)
+plt.xlabel('Experience Level', fontsize=12)
+plt.ylabel('Annual Salary (USD)', fontsize=12)
+plt.legend(title='Region')
 
-print("\n--- Morocco Market Snapshot ---")
-if not morocco_jobs.empty:
-    print(f" Total jobs found in Morocco: {len(morocco_jobs)}")
-    print(morocco_jobs[['job_title', 'city', 'salary_max_usd', 'experience_level']].head(10))
-else:
-    print(" No jobs found for 'MA' or 'Morocco' in this dataset.")
-    
-    # Let's see what countries ARE in there so we can pick a backup
-    print("\nTop 5 Countries in dataset:")
-    print(df['country'].value_counts().head(5))
+# 5. Save the result
+# Saving as an image is better for low-end PCs than plt.show()
+plt.tight_layout()
+plt.savefig('market_analysis_chart.png')
+print("\n✅ Analysis complete! Check 'market_analysis_chart.png' in your folder.")
