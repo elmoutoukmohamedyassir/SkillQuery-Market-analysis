@@ -2,79 +2,65 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import joblib
+from sklearn.cluster import KMeans
 
-# 1. Page Configuration (Mondial Style)
-st.set_page_config(page_title="SkillQuery+ Dashboard", layout="wide")
-st.title("🚀 SkillQuery+: 2026 Market Intelligence")
-st.markdown("Compare your skills against 50,000+ global jobs and real Moroccan benchmarks.")
+# 1. Setup & Data Loading
+st.set_page_config(page_title="SkillQuery+ Pro", layout="wide")
+st.title("🇲🇦 SkillQuery+ Pro: 2026 Intelligence")
 
-# 2. Load Data and Model
 @st.cache_resource
-def load_assets():
+def load_data():
     df = pd.read_csv('data/skillquery_v2.csv')
     model = joblib.load('models/salary_model.pkl')
     encoders = joblib.load('models/encoders.pkl')
     return df, model, encoders
 
-df, model, encoders = load_assets()
+df, model, encoders = load_data()
 
-# 3. Sidebar - The "Query" Section
-st.sidebar.header("🔍 Personal Career Query")
-user_job = st.sidebar.selectbox("Target Role", encoders['job_title'].classes_)
-user_country = st.sidebar.selectbox("Location", encoders['country'].classes_)
-user_exp = st.sidebar.selectbox("Experience", encoders['experience_level'].classes_)
+# --- FUNCTIONALITY 1: Career Path Simulator ---
+st.sidebar.header("🚀 Career Path Simulator")
+target_role = st.sidebar.selectbox("Dream Role", encoders['job_title'].classes_)
+current_exp = st.sidebar.slider("Years of Experience", 0, 15, 2)
 
-if st.sidebar.button("Predict My Salary"):
-    t_idx = encoders['job_title'].transform([user_job])[0]
-    c_idx = encoders['country'].transform([user_country])[0]
-    e_idx = encoders['experience_level'].transform([user_exp])[0]
+# Dynamic Prediction based on the slider
+exp_label = "Entry" if current_exp < 3 else "Mid" if current_exp < 7 else "Senior"
+t_idx = encoders['job_title'].transform([target_role])[0]
+c_idx = encoders['country'].transform(["Morocco"])[0] # Default to Morocco for your local focus
+e_idx = encoders['experience_level'].transform([exp_label])[0]
+
+predicted_val = model.predict([[t_idx, c_idx, e_idx]])[0]
+st.sidebar.metric(label=f"Predicted Salary ({exp_label})", value=f"${predicted_val:,.2f}")
+
+# --- FUNCTIONALITY 2: Regional Heatmap (Morocco Focus) ---
+st.header("📍 Moroccan Tech Hubs")
+morocco_df = df[df['country'] == 'Morocco']
+if not morocco_df.empty:
+    city_counts = morocco_df['city'].value_counts().reset_index()
+    city_counts.columns = ['city', 'jobs']
     
-    prediction = model.predict([[t_idx, c_idx, e_idx]])[0]
-    st.sidebar.success(f"Estimated Value: ${prediction:,.2f} USD")
+    # We use a Pie or Bar for city density since we lack Lat/Lon for a precise map
+    fig_city = px.bar(city_counts, x='city', y='jobs', color='city', 
+                     title="Job Density by Moroccan City", template="plotly_dark")
+    st.plotly_chart(fig_city, use_container_width=True)
+else:
+    st.info("Inject more Morocco data to see the city breakdown!")
 
-# 4. Main Dashboard - Visualizations
-col1, col2 = st.columns(2)
-
-with col1:
-    st.subheader("📊 Global vs. Local Salary")
-    fig = px.bar(df[df['country'].isin(['Morocco', 'USA', 'UK', 'France'])], 
-                 x='experience_level', y='salary_max_usd', color='country',
-                 barmode='group', title="Salary Benchmarks")
-    st.plotly_chart(fig, use_container_width=True)
-
-with col2:
-    st.subheader("🔥 Top 10 High-Demand Skills")
-    # Explode skills for counting
-    all_skills = df['required_skills'].str.split(', ').explode()
-    skill_counts = all_skills.value_counts().head(10)
-    fig2 = px.pie(values=skill_counts.values, names=skill_counts.index, hole=0.4)
-    st.plotly_chart(fig2, use_container_width=True)
-
-# 5. The "Skill Gap" Feature
+# --- FUNCTIONALITY 3: Job Clustering (The 'Famous' Feature) ---
 st.divider()
-st.subheader("🎯 Skill Gap Analyzer")
-my_skills = st.text_input("Enter your current skills (e.g., Python, Laravel, SQL)")
-if my_skills:
-    req_skills = set(df[df['job_title'] == user_job]['required_skills'].iloc[0].split(', '))
-    user_set = set([s.strip() for s in my_skills.split(',')])
-    missing = req_skills - user_set
-    
-    if missing:
-        st.warning(f"To reach the {user_job} level, you should focus on: **{', '.join(missing)}**")
-    else:
-        st.balloons()
-        st.success("You are a perfect match for this role!")
+st.header("🧬 Job & Skill Clustering")
+st.write("This AI groups jobs that share similar 'DNA' (Salary + Experience + Skills).")
 
+# Prepare data for Clustering
+cluster_df = df[['salary_max_usd', 'min_experience_years']].copy()
+kmeans = KMeans(n_clusters=4, random_state=42).fit(cluster_df)
+df['cluster'] = kmeans.labels_
 
+# Visualizing the Clusters
+fig_cluster = px.scatter(df, x="min_experience_years", y="salary_max_usd", 
+                         color="cluster", hover_name="job_title",
+                         title="AI Clustering: Finding Your 'Neighbor' Roles",
+                         labels={"cluster": "Job Group"},
+                         template="plotly_white")
+st.plotly_chart(fig_cluster, use_container_width=True)
 
-# 6. Geographic Distribution (Heatmap)
-st.divider()
-st.subheader("🌍 Global Job Density")
-
-# Since our data has cities, we can plot a map
-# Note: For a real map, we'd need Lat/Lon, but we can use a bubble chart for now
-geo_data = df.groupby(['country', 'city']).size().reset_index(name='job_count')
-fig_map = px.scatter_geo(geo_data, locations="country", locationmode='country names',
-                         hover_name="city", size="job_count",
-                         projection="natural earth", title="Market Hotspots")
-st.plotly_chart(fig_map, use_container_width=True)
+st.info("💡 Insight: Roles in the same color share similar career trajectories.")
