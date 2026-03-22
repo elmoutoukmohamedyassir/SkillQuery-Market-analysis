@@ -27,6 +27,6 @@ df['required_skills'] = df['job_title'].apply(get_skills)
 
 # 5. Save as a NEW version (v2)
 df.to_csv('data/skillquery_v2.csv', index=False)
-print("✅ Success! Your data now has a 'required_skills' column.")
+print(" Success! Your data now has a 'required_skills' column.")
 print("Check the first few rows:")
 print(df[['job_title', 'required_skills']].head())

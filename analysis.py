@@ -7,9 +7,9 @@ try:
     # We only load the columns we need to save RAM
     cols_to_use = ['job_title', 'country', 'experience_level', 'salary_max_usd', 'posted_year']
     df = pd.read_csv('data/skillquery_combined.csv', usecols=cols_to_use)
-    print("✅ Combined Data loaded successfully!")
+    print(" Combined Data loaded successfully!")
 except FileNotFoundError:
-    print("❌ Error: 'data/skillquery_combined.csv' not found. Run inject_local_data.py first!")
+    print(" Error: 'data/skillquery_combined.csv' not found. Run inject_local_data.py first!")
     exit()
 
 # 2. Filter for Morocco vs Global
@@ -44,4 +44,4 @@ plt.legend(title='Region')
 # Saving as an image is better for low-end PCs than plt.show()
 plt.tight_layout()
 plt.savefig('market_analysis_chart.png')
-print("\n✅ Analysis complete! Check 'market_analysis_chart.png' in your folder.")
+print("\n Analysis complete! Check 'market_analysis_chart.png' in your folder.")

@@ -23,7 +23,7 @@ y = df['salary_max_usd']
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 # 5. Train the Random Forest
-print("🧠 Training the Salary Predictor (50,000 rows)...")
+print(" Training the Salary Predictor (50,000 rows)...")
 model = RandomForestRegressor(n_estimators=100, random_state=42)
 model.fit(X_train, y_train)
 
@@ -31,4 +31,4 @@ model.fit(X_train, y_train)
 joblib.dump(model, 'models/salary_model.pkl')
 joblib.dump(encoders, 'models/encoders.pkl')
 
-print("✅ Model trained and saved in 'models/' folder!")
+print(" Model trained and saved in 'models/' folder!")

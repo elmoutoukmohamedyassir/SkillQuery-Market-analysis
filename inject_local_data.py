@@ -34,4 +34,4 @@ df_global = pd.read_csv('data/ai_jobs.csv')
 df_combined = pd.concat([df_global, df_morocco], ignore_index=True)
 
 df_combined.to_csv('data/skillquery_combined.csv', index=False)
-print(f"✅ Injected {len(df_morocco)} real Moroccan entries into your global dataset.")
+print(f" Injected {len(df_morocco)} real Moroccan entries into your global dataset.")

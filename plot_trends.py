@@ -17,4 +17,4 @@ plt.xlabel('Experience Level', fontsize=12)
 
 # Save the plot so it doesn't just "pop up" and slow your PC
 plt.savefig('salary_trends.png')
-print("✅ Chart saved as 'salary_trends.png'. Open it to see the results!")
+print(" Chart saved as 'salary_trends.png'. Open it to see the results!")
